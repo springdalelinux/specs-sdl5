@@ -1,0 +1,144 @@
+%global extraversion 001
+
+Name:		perl-Parse-RecDescent
+Version:	1.965
+Release:	1%{?dist}
+Summary:	Generate Recursive-Descent Parsers
+Group:		Development/Libraries
+License:	GPL+ or Artistic
+URL:		http://search.cpan.org/dist/Parse-RecDescent/
+Source0:	http://search.cpan.org/CPAN/authors/id/D/DC/DCONWAY/Parse-RecDescent-%{version}%{?extraversion}.tar.gz
+Patch0:		Parse-RecDescent-1.965001-utf8.patch
+BuildRoot:	%{_tmppath}/%{name}-%{version}-%{release}-root-%(id -nu)
+BuildArch:	noarch
+BuildRequires:	perl(Carp)
+BuildRequires:	perl(ExtUtils::MakeMaker)
+BuildRequires:	perl(Test::More)
+BuildRequires:	perl(Test::Pod)
+BuildRequires:	perl(Text::Balanced)
+BuildRequires:	perl(version)
+Requires:	perl(:MODULE_COMPAT_%(eval "`perl -V:version`"; echo $version))
+
+%description
+Parse::RecDescent incrementally generates top-down recursive-descent
+text parsers from simple yacc-like grammar specifications. It
+provides:
+ * Regular expressions or literal strings as terminals (tokens)
+ * Multiple (non-contiguous) productions for any rule
+ * Repeated and optional subrules within productions
+ * Full access to Perl within actions specified as part of the grammar
+ * Simple automated error reporting during parser generation and parsing
+ * The ability to commit to, uncommit to, or reject particular
+   productions during a parse
+ * The ability to pass data up and down the parse tree ("down" via
+   subrule argument lists, "up" via subrule return values)
+ * Incremental extension of the parsing grammar (even during a parse)
+ * Precompilation of parser objects
+ * User-definable reduce-reduce conflict resolution via "scoring" of
+   matching productions
+
+%prep
+%setup -q -n Parse-RecDescent-%{version}%{?extraversion}
+
+# Remove redundant exec permissions and fix up script interpreters
+chmod -c a-x demo/* tutorial/*
+perl -pi -e 's|^#!\s?/usr/local/bin/perl\b|#!/usr/bin/perl|' demo/*
+
+# Re-code everything as UTF-8
+%patch0 -p1
+
+%build
+perl Makefile.PL INSTALLDIRS=vendor
+make %{?_smp_mflags}
+
+%install
+rm -rf %{buildroot}
+make pure_install PERL_INSTALL_ROOT=%{buildroot}
+find %{buildroot} -type f -name .packlist -exec rm -f {} \;
+find %{buildroot} -depth -type d -exec rmdir {} \; 2>/dev/null
+%{_fixperms} %{buildroot}
+
+%check
+make test
+
+%clean
+rm -rf %{buildroot}
+
+%files
+%defattr(-,root,root,-)
+%doc Changes README demo/ tutorial/
+%{perl_vendorlib}/Parse/
+%{_mandir}/man3/Parse::RecDescent.3pm*
+
+%changelog
+* Tue Sep 20 2011 Paul Howarth <paul@city-fan.org> 1.965-1
+- update to 1.965001
+  - fixed subtle bug in leftop and rightop caused by removal of $&
+  - fixed bug with undefined $1 when parsing literals
+  - fixed premature namespace destruction bug with compiled grammars
+  - removed all references to /opt's version of perl interpreter
+  - added Parse::RecDescent::redirect_reporting_to() to enable ERROR, TRACE
+    and TRACECONTEXT filehandles to be easily redirected
+- use a patch rather than scripted iconv to convert files to UTF-8
+
+* Tue Sep 20 2011 Paul Howarth <paul@city-fan.org> 1.962.2-2
+- BR: perl(Carp)
+- spec file clean-up
+- remove redundant filtering
+- fix perl interpreter locations in demo scripts
+- re-code upstream Changes file as UTF-8
+
+* Sun Sep 27 2009 Chris Weyl <cweyl@alumni.drew.edu> 1.962.2-1
+- updated for latest GA SQL::Translator
+- add default filtering
+- auto-update to 1.962.2 (by cpan-spec-update 0.01)
+- added a new br on perl(Text::Balanced) (version 0)
+
+* Mon Feb  2 2009 Stepan Kasal <skasal@redhat.com> 1.96-1
+- new upstream version
+
+* Wed Nov 14 2007 Robin Norwood <rnorwood@redhat.com> 1.95.1-3
+- apply fixes from package review:
+  - remove BR: perl
+  - use iconv to convert file to utf-8
+  - include BR: perl(Test::Pod)
+  - fix old changelog entry
+- resolves: bz#226274
+
+* Tue Oct 16 2007 Tom "spot" Callaway <tcallawa@redhat.com> 1.95.1-2
+- add BR: perl(version), perl(Test::More)
+
+* Tue Oct 16 2007 Tom "spot" Callaway <tcallawa@redhat.com> 1.95.1-1
+- bump to 1.95.1
+- correct license tag (now under perl license)
+- add BR: perl(ExtUtils::MakeMaker)
+
+* Fri Jul 20 2007 Robin Norwood <rnorwood@redhat.com> 1.94-6.fc8
+- bring fixes from EPEL build into F8
+- fix minor specfile issues
+- package the docs as well
+
+* Thu Apr 21 2005 Jose Pedro Oliveira <jpo at di.uminho.pt> 1.94-5
+- #155620
+- bring up to date with current Fedora Extras perl spec template
+
+* Wed Sep 22 2004 Chip Turner <cturner@redhat.com> 1.94-4
+- rebuild
+
+* Tue Feb 17 2004 Chip Turner <cturner@redhat.com> 1.94-2
+- fix rm to not be interactive (bz115997)
+
+* Fri Feb 13 2004 Chip Turner <cturner@redhat.com> 1.94-1
+- update to 1.94
+
+* Tue Aug  6 2002 Chip Turner <cturner@redhat.com>
+- automated release bump and build
+
+* Sat Jul 20 2002 Chip Turner <cturner@localhost.localdomain>
+- remove Text::Balanced modules since they are now in core perl
+
+* Thu Jun 27 2002 Chip Turner <cturner@redhat.com>
+- description update
+
+* Fri Jun 07 2002 cturner@redhat.com
+- specfile autogenerated
